@@ -1,0 +1,26 @@
+{
+  "chapters": [
+    {
+      "id": 1,
+      "title": "Characteristics and Classification of Living Organisms",
+      "terms": [
+        {
+          "word": "Movement",
+          "zh": "运动",
+          "definition": "An action by an organism causing a change of position or place"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Organisation of the Organism",
+      "terms": [
+        {
+          "word": "Cell",
+          "zh": "细胞",
+          "definition": "Basic structural and functional unit of all living organisms"
+        }
+      ]
+    }
+  ]
+}

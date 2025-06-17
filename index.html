@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 基础元信息 -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biology Flashcards</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- 首页容器 -->
+  <div id="home" class="container">
+    <h1>生物学闪卡系统</h1>
+    
+    <!-- 模式选择按钮 -->
+    <div class="mode-selector">
+      <button onclick="loadMode('chapter')">章节模式</button>
+      <button onclick="loadMode('random')">随机模式</button>
+      <button onclick="loadFavoriteMode()">收藏模式</button>
+    </div>
+    
+    <!-- 章节列表 (仅章节模式显示) -->
+    <div id="chapterList" class="chapter-grid"></div>
+  </div>
+
+  <!-- 闪卡容器 -->
+  <div id="flashcardContainer" class="container hidden">
+    <!-- 模式切换按钮 -->
+    <div class="nav-buttons">
+      <button onclick="goHome()">返回首页</button>
+      <button onclick="toggleMode()" id="toggleModeBtn">切换为考查模式</button>
+    </div>
+    
+    <!-- 搜索栏 -->
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="搜索词汇..." onkeyup="searchTerms()">
+    </div>
+    
+    <!-- 闪卡展示区 -->
+    <div id="flashcards" class="flashcard-grid"></div>
+    
+    <!-- 进度条 -->
+    <div id="progress" class="progress-bar"></div>
+    
+    <!-- 提示信息 -->
+    <div id="toast" class="toast-notification"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+<!-- 修改为 -->
+<link rel="stylesheet" href="styles.css?v=1.1">
+<script src="app.js?v=1.1"></script>
