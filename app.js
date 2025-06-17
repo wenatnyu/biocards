@@ -1,169 +1,333 @@
-// 状态管理对象
-const state = {
-  currentChapter: null,     // 当前章节
-  isExamMode: false,        // 是否考查模式
-  allTerms: [],             // 所有词汇
-  currentTerms: [],         // 当前显示词汇
-  currentIndex: 0,          // 当前进度索引
-  favorites: new Set()       // 收藏词汇
+// 全局变量
+let currentMode = 'chapter';
+let currentChapter = null;
+let currentIndex = 0;
+let flashcards = [];
+let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+// 词汇数据
+const vocabData = {
+    "Chapter 1: Cell Structure": [
+        {
+            "word": "Cell",
+            "zh": "细胞",
+            "definition": "The basic structural and functional unit of all living organisms"
+        },
+        {
+            "word": "Nucleus",
+            "zh": "细胞核",
+            "definition": "The central organelle that contains the cell's genetic material"
+        },
+        {
+            "word": "Cytoplasm",
+            "zh": "细胞质",
+            "definition": "The gel-like substance that fills the cell and contains organelles"
+        }
+    ],
+    "Chapter 2: Cell Membrane": [
+        {
+            "word": "Cell Membrane",
+            "zh": "细胞膜",
+            "definition": "The semi-permeable membrane that surrounds the cell"
+        },
+        {
+            "word": "Phospholipid",
+            "zh": "磷脂",
+            "definition": "The main component of cell membranes"
+        },
+        {
+            "word": "Diffusion",
+            "zh": "扩散",
+            "definition": "The movement of molecules from high to low concentration"
+        }
+    ],
+    "Chapter 3: Cell Division": [
+        {
+            "word": "Mitosis",
+            "zh": "有丝分裂",
+            "definition": "The process of cell division that results in two identical daughter cells"
+        },
+        {
+            "word": "Meiosis",
+            "zh": "减数分裂",
+            "definition": "The process of cell division that results in four genetically different cells"
+        },
+        {
+            "word": "Chromosome",
+            "zh": "染色体",
+            "definition": "Thread-like structures that contain genetic information"
+        }
+    ]
 };
 
-// 初始化函数
-async function init() {
-  // 加载词汇数据
-  const response = await fetch('docs/vocab.json');
-  const data = await response.json();
-  state.allTerms = data.chapters.flatMap(ch => ch.terms);
-  
-  // 加载收藏数据
-  const savedFavorites = localStorage.getItem('favorites');
-  if (savedFavorites) {
-    state.favorites = new Set(JSON.parse(savedFavorites));
-  }
-  
-  // 渲染章节列表
-  renderChapterList(data.chapters);
-}
+// DOM元素
+const homePage = document.getElementById('home-page');
+const flashcardPage = document.getElementById('flashcard-page');
+const chapterGrid = document.getElementById('chapter-grid');
+const flashcardContainer = document.getElementById('flashcard-container');
+const searchInput = document.getElementById('search-input');
+const progressBar = document.getElementById('progress-bar');
+const toast = document.getElementById('toast');
 
-// 渲染章节列表
-function renderChapterList(chapters) {
-  const container = document.getElementById('chapterList');
-  container.innerHTML = chapters.map(ch => `
-    <div class="chapter-card" onclick="loadChapter(${ch.id})">
-      <h3>Chapter ${ch.id}</h3>
-      <p>${ch.title}</p>
-    </div>
-  `).join('');
-}
+// 按钮元素
+const chapterModeBtn = document.getElementById('chapter-mode-btn');
+const randomModeBtn = document.getElementById('random-mode-btn');
+const favoritesBtn = document.getElementById('favorites-btn');
+const backBtn = document.getElementById('back-btn');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
 
-// 加载模式选择
-function loadMode(mode) {
-  document.getElementById('home').classList.add('hidden');
-  document.getElementById('flashcardContainer').classList.remove('hidden');
-  
-  switch(mode) {
-    case 'chapter':
-      state.currentTerms = state.allTerms.filter(t => t.chapter === state.currentChapter);
-      break;
-    case 'random':
-      state.currentTerms = [...state.allTerms].sort(() => Math.random() - 0.5);
-      break;
-    case 'favorite':
-      state.currentTerms = state.allTerms.filter(t => state.favorites.has(t.word));
-      break;
-  }
-  
-  renderFlashcards();
-}
-
-// 渲染闪卡
-function renderFlashcards() {
-  const container = document.getElementById('flashcards');
-  container.innerHTML = '';
-  
-  if (state.isExamMode) {
-    // 考查模式渲染单卡
-    const card = createFlashcard(state.currentTerms[state.currentIndex]);
-    container.appendChild(card);
-    updateProgress();
-  } else {
-    // 速查模式渲染网格
-    state.currentTerms.forEach(term => {
-      container.appendChild(createFlashcard(term));
-    });
-  }
-}
-
-// 创建单个闪卡
-function createFlashcard(term) {
-  const card = document.createElement('div');
-  card.className = `flashcard ${state.isExamMode ? 'flashcard-single' : ''}`;
-  card.innerHTML = `
-    <!-- 收藏按钮 -->
-    <svg class="favorite-star ${state.favorites.has(term.word) ? 'active' : ''}" 
-         onclick="toggleFavorite('${term.word}')" 
-         viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" 
-            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-    </svg>
-    
-    <!-- 正面内容 -->
-    <div class="front">
-      <h3>${term.word}</h3>
-    </div>
-    
-    <!-- 背面内容 -->
-    <div class="back">
-      <h4>${term.zh}</h4>
-      <p>${term.definition}</p>
-    </div>
-  `;
-  
-  // 添加点击事件
-  if (!state.isExamMode) {
-    card.onclick = () => flipCard(card);
-  }
-  return card;
-}
-
-// 翻转闪卡
-function flipCard(card) {
-  card.classList.toggle('flipped');
-}
-
-// 切换收藏
-function toggleFavorite(word) {
-  if (state.favorites.has(word)) {
-    state.favorites.delete(word);
-    showToast(`${word} 已取消收藏`);
-  } else {
-    state.favorites.add(word);
-    showToast(`${word} 已收藏`);
-  }
-  
-  // 保存到本地存储
-  localStorage.setItem('favorites', JSON.stringify([...state.favorites]));
-  
-  // 更新星星图标
-  document.querySelectorAll('.favorite-star').forEach(star => {
-    if (star.parentElement.querySelector('h3').textContent === word) {
-      star.classList.toggle('active');
+// 初始化
+function init() {
+    try {
+        window.vocabData = vocabData;
+        
+        // 初始化事件监听
+        initEventListeners();
+        
+        // 显示章节列表
+        showChapterList();
+    } catch (error) {
+        console.error('Error initializing application:', error);
+        showToast('Error initializing application. Please try again later.');
     }
-  });
+}
+
+// 初始化事件监听
+function initEventListeners() {
+    // 模式选择按钮
+    chapterModeBtn.addEventListener('click', () => showChapterList());
+    randomModeBtn.addEventListener('click', () => loadRandomMode());
+    favoritesBtn.addEventListener('click', () => loadFavoriteMode());
+    
+    // 导航按钮
+    backBtn.addEventListener('click', goHome);
+    prevBtn.addEventListener('click', showPreviousCard);
+    nextBtn.addEventListener('click', showNextCard);
+    
+    // 搜索功能
+    searchInput.addEventListener('input', debounce(searchTerms, 300));
+}
+
+// 显示章节列表
+function showChapterList() {
+    chapterGrid.innerHTML = '';
+    
+    Object.entries(window.vocabData).forEach(([chapter, terms]) => {
+        const chapterCard = document.createElement('div');
+        chapterCard.className = 'chapter-card';
+        chapterCard.innerHTML = `
+            <h3>${chapter}</h3>
+            <p>${terms.length} terms</p>
+        `;
+        chapterCard.addEventListener('click', () => loadChapter(chapter));
+        chapterGrid.appendChild(chapterCard);
+    });
+}
+
+// 加载章节
+function loadChapter(chapter) {
+    currentMode = 'chapter';
+    currentChapter = chapter;
+    currentIndex = 0;
+    flashcards = window.vocabData[chapter];
+    
+    showFlashcardPage();
+    updateProgress();
+}
+
+// 加载随机模式
+function loadRandomMode() {
+    currentMode = 'random';
+    currentChapter = null;
+    currentIndex = 0;
+    
+    // 合并所有章节的词汇
+    flashcards = Object.values(window.vocabData).flat();
+    // 随机打乱顺序
+    flashcards = shuffleArray(flashcards);
+    
+    showFlashcardPage();
+    updateProgress();
+}
+
+// 加载收藏模式
+function loadFavoriteMode() {
+    currentMode = 'favorites';
+    currentChapter = null;
+    currentIndex = 0;
+    
+    // 从所有词汇中筛选出收藏的词汇
+    flashcards = Object.values(window.vocabData)
+        .flat()
+        .filter(term => favorites.includes(term.word));
+    
+    if (flashcards.length === 0) {
+        showToast('No favorite terms yet. Add some favorites to see them here!');
+        return;
+    }
+    
+    showFlashcardPage();
+    updateProgress();
+}
+
+// 显示闪卡页面
+function showFlashcardPage() {
+    homePage.classList.add('hidden');
+    flashcardPage.classList.remove('hidden');
+    renderCurrentCard();
+}
+
+// 返回首页
+function goHome() {
+    flashcardPage.classList.add('hidden');
+    homePage.classList.remove('hidden');
+    searchInput.value = '';
+}
+
+// 渲染当前闪卡
+function renderCurrentCard() {
+    const term = flashcards[currentIndex];
+    if (!term) return;
+    
+    flashcardContainer.innerHTML = `
+        <div class="flashcard" onclick="this.classList.toggle('flipped')">
+            <div class="front">
+                <h3>${term.word}</h3>
+                <svg class="favorite-star ${favorites.includes(term.word) ? 'active' : ''}" 
+                     onclick="toggleFavorite(event, '${term.word}')" 
+                     viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+            </div>
+            <div class="back">
+                <h4>${term.zh}</h4>
+                <p>${term.definition}</p>
+            </div>
+        </div>
+    `;
+    
+    updateNavigationButtons();
+}
+
+// 更新导航按钮状态
+function updateNavigationButtons() {
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex === flashcards.length - 1;
+}
+
+// 显示上一张卡片
+function showPreviousCard() {
+    if (currentIndex > 0) {
+        currentIndex--;
+        renderCurrentCard();
+        updateProgress();
+    }
+}
+
+// 显示下一张卡片
+function showNextCard() {
+    if (currentIndex < flashcards.length - 1) {
+        currentIndex++;
+        renderCurrentCard();
+        updateProgress();
+    }
+}
+
+// 更新进度条
+function updateProgress() {
+    const progress = ((currentIndex + 1) / flashcards.length) * 100;
+    progressBar.style.width = `${progress}%`;
+}
+
+// 切换收藏状态
+function toggleFavorite(event, word) {
+    event.stopPropagation();
+    
+    const index = favorites.indexOf(word);
+    if (index === -1) {
+        favorites.push(word);
+        showToast('Added to favorites!');
+    } else {
+        favorites.splice(index, 1);
+        showToast('Removed from favorites!');
+    }
+    
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    renderCurrentCard();
+}
+
+// 搜索功能
+function searchTerms() {
+    const searchTerm = searchInput.value.toLowerCase();
+    if (!searchTerm) {
+        showChapterList();
+        return;
+    }
+    
+    const results = Object.entries(window.vocabData)
+        .flatMap(([chapter, terms]) => 
+            terms.filter(term => 
+                term.word.toLowerCase().includes(searchTerm) ||
+                term.zh.toLowerCase().includes(searchTerm) ||
+                term.definition.toLowerCase().includes(searchTerm)
+            ).map(term => ({...term, chapter}))
+        );
+    
+    if (results.length === 0) {
+        chapterGrid.innerHTML = '<p class="no-results">No matching terms found.</p>';
+        return;
+    }
+    
+    chapterGrid.innerHTML = '';
+    results.forEach(term => {
+        const card = document.createElement('div');
+        card.className = 'chapter-card';
+        card.innerHTML = `
+            <h3>${term.word}</h3>
+            <p>${term.zh}</p>
+            <p class="chapter-name">${term.chapter}</p>
+        `;
+        card.addEventListener('click', () => {
+            loadChapter(term.chapter);
+            // 找到并显示匹配的卡片
+            currentIndex = window.vocabData[term.chapter].findIndex(t => t.word === term.word);
+            renderCurrentCard();
+            updateProgress();
+        });
+        chapterGrid.appendChild(card);
+    });
 }
 
 // 显示提示信息
 function showToast(message) {
-  const toast = document.getElementById('toast');
-  toast.textContent = message;
-  toast.style.animation = 'none';
-  void toast.offsetWidth; // 触发重绘
-  toast.style.animation = null;
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    setTimeout(() => {
+        toast.style.opacity = '0';
+    }, 2000);
 }
 
-// 初始化执行
-init();
-// 在 init() 函数末尾添加
-console.log('初始化完成，当前词汇数:', state.allTerms.length);
-console.log('收藏数据:', state.favorites);
-// 修改 loadMode 函数
-function loadMode(mode) {
-  console.log(`加载模式: ${mode}`);
-  if (mode === 'favorite' && state.favorites.size === 0) {
-    alert('您尚未收藏任何词汇！');
-    return;
-  }
-  // ...原有代码
+// 工具函数
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
-/* 在 styles.css 添加 */
-@media (max-width: 480px) {
-  .flashcard {
-    font-size: 14px;
-    padding: 15px;
-  }
-  
-  .favorite-star {
-    width: 20px;
-    height: 20px;
-  }
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
 }
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', init);
