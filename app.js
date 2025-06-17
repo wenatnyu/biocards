@@ -10,51 +10,51 @@ const vocabData = {
     "Chapter 1: Cell Structure": [
         {
             "word": "Cell",
-            "zh": "细胞",
+            "zh": "\u7EC6\u80DE", // 细胞
             "definition": "The basic structural and functional unit of all living organisms"
         },
         {
             "word": "Nucleus",
-            "zh": "细胞核",
+            "zh": "\u7EC6\u80DE\u6838", // 细胞核
             "definition": "The central organelle that contains the cell's genetic material"
         },
         {
             "word": "Cytoplasm",
-            "zh": "细胞质",
+            "zh": "\u7EC6\u80DE\u8D28", // 细胞质
             "definition": "The gel-like substance that fills the cell and contains organelles"
         }
     ],
     "Chapter 2: Cell Membrane": [
         {
             "word": "Cell Membrane",
-            "zh": "细胞膜",
+            "zh": "\u7EC6\u80DE\u819C", // 细胞膜
             "definition": "The semi-permeable membrane that surrounds the cell"
         },
         {
             "word": "Phospholipid",
-            "zh": "磷脂",
+            "zh": "\u78F7\u8102", // 磷脂
             "definition": "The main component of cell membranes"
         },
         {
             "word": "Diffusion",
-            "zh": "扩散",
+            "zh": "\u6269\u6563", // 扩散
             "definition": "The movement of molecules from high to low concentration"
         }
     ],
     "Chapter 3: Cell Division": [
         {
             "word": "Mitosis",
-            "zh": "有丝分裂",
+            "zh": "\u6709\u4E1D\u5206\u88C2", // 有丝分裂
             "definition": "The process of cell division that results in two identical daughter cells"
         },
         {
             "word": "Meiosis",
-            "zh": "减数分裂",
+            "zh": "\u51CF\u6570\u5206\u88C2", // 减数分裂
             "definition": "The process of cell division that results in four genetically different cells"
         },
         {
             "word": "Chromosome",
-            "zh": "染色体",
+            "zh": "\u67D3\u8272\u4F53", // 染色体
             "definition": "Thread-like structures that contain genetic information"
         }
     ]
